@@ -1,0 +1,84 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace gitter
+{
+    public class PlantumlRenderer : IPlantumlRenderer
+    {
+        string cacheDir;
+        private readonly string plantumlJar;
+        const string pumlExtension = ".puml";
+        const string pngExtension = ".png";
+        readonly IProcessRunner processRunner;
+
+        public PlantumlRenderer(IProcessRunner processRunner, string plantumlJar)
+        {
+            this.plantumlJar = plantumlJar;
+            this.processRunner = processRunner;
+            cacheDir = Path.Combine(Path.GetTempPath(), Hash(nameof(PlantumlRenderer) + "-1.0.0"));
+            Utils.EnsureDirectoryExists(cacheDir);
+        }
+
+        string GetCachePath(string id, string extension)
+        {
+            return Path.Combine(cacheDir, id + extension);
+        }
+
+        static string Hash(string x)
+        {
+            var sha1 = System.Security.Cryptography.SHA1.Create();
+            var data = System.Text.UTF8Encoding.UTF8.GetBytes(x);
+            var hash = sha1.ComputeHash(data);
+            return String.Join(String.Empty, hash.Select(_ => _.ToString("x")));
+        }
+
+        public Task<string> GetId(string content)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var id = Hash(content);
+                var pumlPath = GetCachePath(id, pumlExtension);
+                lock (cacheDir)
+                {
+                    if (!File.Exists(pumlPath))
+                    {
+                        File.WriteAllText(pumlPath, content);
+                    }
+                }
+                return id;
+            });
+        }
+
+        public async Task<Stream> GetPng(string id)
+        {
+            var imagePath = await Task.Factory.StartNew(() =>
+            {
+                // image path from hash
+                var imageFsPath = GetCachePath(id, pngExtension);
+
+                lock (cacheDir)
+                {
+                    // image exists ?
+                    if (!File.Exists(imageFsPath))
+                    {
+                        var pumlFsPath = GetCachePath(id, pumlExtension);
+                        processRunner.Run("java.exe", new[] { "-jar", plantumlJar, "-o", cacheDir, pumlFsPath });
+                    }
+                }
+
+                return imageFsPath;
+            });
+
+            return File.OpenRead(imagePath);
+        }
+
+        public async Task<Stream> GetPlantuml(string id)
+        {
+            var pumlPath = GetCachePath(id, pumlExtension);
+            return File.OpenRead(pumlPath);
+        }
+    }
+}

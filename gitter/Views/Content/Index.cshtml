@@ -1,0 +1,20 @@
+﻿@using gitter
+@model gitter.Models.ContentModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<header>
+
+    @await Component.InvokeAsync(nameof(BreadCrumbs), new { Path = Model.Path })
+
+    <div>
+        <form action="/grep" method="get">
+            <input name="q" placeholder="Search" accesskey="s" />
+        </form>
+    </div>
+
+</header>
+
+@Html.Raw(Model.Body)
