@@ -3,7 +3,7 @@
 <ul class="breadcrumb">
     @foreach (var i in Model)
     {
-        <li><a href="@i.Href">@i.Name</a></li>
+        <li><a href="@Url.Content(i.Href)">@i.Name</a></li>
     }
 </ul>
 

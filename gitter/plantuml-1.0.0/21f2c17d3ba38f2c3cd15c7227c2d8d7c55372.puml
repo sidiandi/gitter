@@ -1,0 +1,140 @@
+@startuml
+
+title Package - Use Case Diagram
+
+actor CT
+
+artifact "OS (Windows 10)" as win10
+
+artifact "COEM specification" as coemSpec
+
+CT --> coemSpec
+
+artifact Drivers
+
+actor CV
+
+win10 --> CV
+coemSpec --> CV
+Drivers --> CV
+
+artifact CoemIso
+artifact CoemAdd1Iso
+
+CV --> CoemIso
+CV --> CoemAdd1Iso
+
+agent CreateOEM
+
+actor CtDeveloper
+
+note left
+1 day merge
+4 days test on target hardware 
+end note
+
+CtDeveloper --> CreateOEM
+
+artifact CtOemZip
+
+CoemIso --> CreateOEM
+CreateOEM --> CtOemZip 
+
+artifact ExtSw [
+External Software
+---
+- TorusInstallationPackageAsZip
+- CT_APPSInstallationPackageAsZip
+- CT_AlgoInstallationPackageAsZip
+- SQLServer
+]
+
+agent ContentCreator
+
+note left
+1 hour
+end note
+
+CoemAdd1Iso --> ContentCreator
+CtOemZip --> ContentCreator
+ExtSw --> ContentCreator
+
+artifact SyngoTorusSDK
+artifact CtCode
+
+agent "Build" as CtNb
+
+note left
+ICS, IRS, firmware
+3 (?) hours
+end note
+
+SyngoTorusSDK --> CtNb
+CtCode --> CtNb
+
+artifact Result [
+Build Result
+- IRSPackageISO
+- SomarisPackageDirectory
+- FWPackageDirectory
+]
+
+CtNb --> Result
+
+Result --> ContentCreator
+
+artifact ISOFileForMasterInstallation
+
+ContentCreator --> ISOFileForMasterInstallation
+
+agent "WDS installation on VM for Clone image creation" as wdsInstall
+
+note left
+4h20 install
+0h30 create image
+end note
+
+ISOFileForMasterInstallation --> wdsInstall
+
+artifact CloneImageDirectory
+
+actor ReleaseManagement
+
+CloneImageDirectory --> ReleaseManagement
+
+artifact SdCardImage
+
+ReleaseManagement --> SdCardImage : create
+
+actor CvFactory
+
+SdCardImage --> CvFactory
+
+artifact SdCard [
+    SD Card (read-only)
+]
+
+CvFactory --> SdCard 
+
+wdsInstall --> CloneImageDirectory
+
+agent DeployCloneImageOnTestMachine [
+    DeployCloneImageOnTestMachine
+    with FieldUpdater
+]
+
+note left
+2h00
+end note
+
+CloneImageDirectory --> DeployCloneImageOnTestMachine 
+
+agent SystemUpgrade
+
+DeployCloneImageOnTestMachine --> SystemUpgrade
+
+CtNb ..> ContentCreator : call
+CtNb ..> wdsInstall : call
+CtNb ..> DeployCloneImageOnTestMachine : call
+
+@enduml

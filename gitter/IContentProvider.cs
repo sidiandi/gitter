@@ -12,5 +12,6 @@ namespace gitter
     {
         Option<Stream> Read(ContentPath path);
         IEnumerable<ContentPath> GetChildren(ContentPath path);
+        bool Exists(ContentPath mdFile);
     }
 }

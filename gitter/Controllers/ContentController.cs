@@ -18,15 +18,15 @@ namespace gitter
             return String.Join(@"
 ----
 "
-            , GetChildList(children).AsEnumerable().Concat(
+            , GetChildList(path, children).AsEnumerable().Concat(
                 GetDirectoryReadme(provider, path).AsEnumerable()));
         }
 
-        static Option<string> GetChildList(IEnumerable<ContentPath> children)
+        static Option<string> GetChildList(ContentPath directory, IEnumerable<ContentPath> children)
         {
             if (children.Any())
             {
-                return String.Join(String.Empty, children.Select(_ => $"* [{_.Last.ValueOr(_.ToString())}]({_.Href})\r\n"));
+                return String.Join(String.Empty, children.Select(_ => $"* [{_.NameWithDirSlash.ValueOr(_.ToString())}]({_.AbsoluteHref})\r\n"));
             }
             else
             {
@@ -64,12 +64,19 @@ namespace gitter
 
             if (children.Any())
             {
+                contentPath = contentPath.AsDirectory;
                 return await MarkdownView(renderer, contentPath, GetDirectoryMarkdown(contentProvider, contentPath, children));
             }
 
             if (contentPath.IsExtension(new[] { ".md"}))
             {
                 return await MarkdownView(renderer, contentPath, GetText(contentProvider, contentPath));
+            }
+
+            var mdFile = contentPath.CatName(".md");
+            if (mdFile.HasValue && contentProvider.Exists(mdFile.Value))
+            {
+                return await MarkdownView(renderer, contentPath, GetText(contentProvider, mdFile.Value));
             }
 
             if (IsText(contentProvider, contentPath))
@@ -89,7 +96,7 @@ namespace gitter
             [FromQuery] string q)
         {
             var result = await grep.Grep(q);
-            var markdown = result.Select(_ => $"* [{_.Path}]({_.Path.Href}#{_.LineNumber})({_.LineNumber}): `{_.Text}`").JoinLines();
+            var markdown = result.Select(_ => $"* [{_.Path}]({_.Path.AbsoluteHref}#{_.LineNumber})({_.LineNumber}): `{_.Text.Truncate(256)}`").JoinLines();
             return await MarkdownView(renderer, ContentPath.FromUrlPath("/"), markdown);
         }
 
@@ -141,7 +148,7 @@ namespace gitter
         {
             var cp = ContentPath.FromUrlPath(path);
             var content = contentProvider.Read(cp);
-            var mimeType = cp.Last.Select(MimeTypes.GetMimeType).ValueOr(MimeTypes.FallbackMimeType);
+            var mimeType = cp.NameWithDirSlash.Select(MimeTypes.GetMimeType).ValueOr(MimeTypes.FallbackMimeType);
             return File(content.Value, mimeType);
        }
     }

@@ -1,7 +1,11 @@
-﻿{
+{
   "iisSettings": {
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
+    "iis": {
+      "applicationUrl": "https://mr-intranet.healthcare.siemens.com/CSI/chp-debug",
+      "sslPort": 0
+    },
     "iisExpress": {
       "applicationUrl": "http://localhost:57482",
       "sslPort": 44310
@@ -12,16 +16,25 @@
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_HTTPS_PORT": "44310"
+        "ASPNETCORE_HTTPS_PORT": "44310",
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
     "gitter": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "https://localhost:5001;http://localhost:5000"
+        "ASPNETCORE_URLS": "https://localhost:5001;http://localhost:5000",
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "mr-intranet": {
+      "commandName": "IIS",
+      "workingDirectory": "\\\\mr-intranet.healthcare.siemens.com\\CSI$\\chp-debug",
+      "launchBrowser": true,
+      "launchUrl": "https://mr-intranet.healthcare.siemens.com/CSI/chp-debug",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
   }

@@ -2,19 +2,23 @@
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace gitter
 {
     internal class MarkdownPlantumlExtension : IMarkdownExtension
     {
         private readonly IPlantumlRenderer plantumlRenderer;
+        private readonly IUrlHelper urlHelper;
 
         public MarkdownPlantumlExtension(IPlantumlRenderer plantumlRenderer)
         {
             this.plantumlRenderer = plantumlRenderer;
+            this.urlHelper = urlHelper;
         }
 
         public void Setup(MarkdownPipelineBuilder pipeline)
@@ -33,7 +37,7 @@ namespace gitter
                 var codeBlock = block as FencedCodeBlock;
                 if (codeBlock == null) return false;
 
-                var infoCorrect = codeBlock.Info.Equals("plantuml", StringComparison.InvariantCultureIgnoreCase);
+                var infoCorrect = Regex.IsMatch(codeBlock.Info, "^(plantuml|puml)$", RegexOptions.IgnoreCase);
                 if (!infoCorrect) return false;
 
                 return infoCorrect;
@@ -51,8 +55,8 @@ namespace gitter
                     var puml = fencedCodeBlock.Lines.ToSlice().ToString();
                     var hash = this.plantumlRenderer.GetId(puml).Result;
                     // write image link
-                    var path = $"/plantuml/{hash}.png";
-                    var pumlPath = $"/plantuml/{hash}.puml";
+                    var path = $"~/plantuml/{hash}.png";
+                    var pumlPath = $"~/plantuml/{hash}.puml";
                     renderer.WriteLine($@"<img src={path.Quote()} />
 <ul>
 <li><a target=""_blank"" href={pumlPath.Quote()}>Source</a></li>

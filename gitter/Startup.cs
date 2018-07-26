@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -14,9 +15,12 @@ namespace gitter
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly IHostingEnvironment environment;
+
+        public Startup(IConfiguration configuration, IHostingEnvironment environment)
         {
             Configuration = configuration;
+            this.environment = environment;
         }
 
         public IConfiguration Configuration { get; }
@@ -33,18 +37,37 @@ namespace gitter
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            var plantumlJar = @"C:\bin\plantuml.jar";
-            var processRunner = new RealProcessRunner();
-            var plantumlRenderer = new PlantumlRenderer(processRunner, plantumlJar);
+            var plantumlJar = Path.Combine(environment.ContentRootPath, "plantuml.jar");
+
+            var processRunner = new RealProcessRunner(
+                new[] { @"java\bin", @"graphviz\release\bin", @"Git\Cmd" }.Select(_ => Utils.LookUpwardsForSubdirectory(_))
+                .Where(_ => _.HasValue).Select(_ => _.Value),
+                new Dictionary<string, string>
+                {
+                    { "GRAPHVIZ_DOT", Utils.LookUpwardsForSubdirectory(@"graphviz\release\bin").Select(_ => Path.Combine(_, "dot.exe")).ValueOr(String.Empty) }
+                }
+                );
+
+
+            var plantumlRenderer = new PlantumlRenderer(processRunner, plantumlJar, Path.Combine(environment.ContentRootPath, "plantuml-1.0.0"));
             var markdownRenderer = new MarkdownRenderer(plantumlRenderer);
 
-            var gitRepository = @"C:\work\chp";
+            // var gitRepository = Configuration["RepositoryPath"];
+            var gitRepository = "repository";
+            if (!Path.IsPathRooted(gitRepository))
+            {
+                gitRepository = Path.Combine(environment.ContentRootPath, gitRepository);
+            }
+
+            Utils.EnsureDirectoryExists(gitRepository);
             services.AddSingleton<IMarkdownRenderer>(markdownRenderer);
             services.AddSingleton<IContentProvider>(_ => (IContentProvider) new FileSystemContentProvider(gitRepository));
             services.AddSingleton<IContentGrep>(_ => new GitContentGrep(processRunner, gitRepository));
             services.AddSingleton<IPlantumlRenderer>(_ => plantumlRenderer);
             services.AddSingleton<IProcessRunner>(processRunner);
         }
+
+        IConfiguration configuration;
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -61,6 +84,7 @@ namespace gitter
             }
 
             app.UseHttpsRedirection();
+            app.UsePathBase(Configuration["PathBase"]);
             app.UseStaticFiles();
             app.UseCookiePolicy();
 

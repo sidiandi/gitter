@@ -19,7 +19,7 @@ namespace gitter
 
         public async Task<IEnumerable<GrepResult>> Grep(string q)
         {
-            var result = await runner.Run("git.exe", new[] { "-C", @"C:\work\chp", "grep", "-I", "-n", "-i", q });
+            var result = await runner.Run("git.exe", new[] { "-C", gitRepository, "grep", "-I", "-n", "-i", q });
             return ParseGitGrepOutput(result.Output);
         }
 

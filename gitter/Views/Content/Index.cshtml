@@ -10,12 +10,12 @@
     @await Component.InvokeAsync(nameof(BreadCrumbs), new { Path = Model.Path })
 
     <div>
-        <form action="/grep" method="get">
+        <form action="~/grep" method="get">
             <input name="q" placeholder="Search" accesskey="s" />
         </form>
     </div>
 
 </header>
 <article>
-    @Html.Raw(Model.Body)
+    @(Html.RenderTildeSlash(Url, Model.Body))
 </article>

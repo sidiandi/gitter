@@ -1,0 +1,14 @@
+@startuml
+title Backlog Item States
+
+[*] --> New : Create\nWhen? any time\nWho? Everyone
+New --> Approved : Approve\nWhen? Grooming\nWho? Product Owner
+
+Approved --> Committed : Commit\nWhen? Planning\nWho? Team
+Approved: Acceptance Criteria
+
+Committed --> Done : Accept solutionnWhen? Demo\nWho? Product Owner
+Committed --> New : Reject solution\nWhen? Sprint Review\nWho? Product Owner
+Committed: Acceptance Criteria
+Committed: Effort
+@enduml

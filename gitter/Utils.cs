@@ -5,10 +5,13 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Functional.Option;
+using Microsoft.AspNetCore.Html;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace gitter
 {
-    internal static class Utils
+    public static class Utils
     {
         public static IEnumerable<string> SplitPath(this string path)
         {
@@ -100,5 +103,44 @@ namespace gitter
         {
             return String.Join("\r\n", lines);
         }
+
+        public static Option<string> LookUpwardsForSubdirectory(string name)
+        {
+            return LookUpwardsForSubdirectory(System.Environment.CurrentDirectory, name);
+        }
+
+        public static Option<string> LookUpwardsForSubdirectory(string startDirectory, string name)
+        {
+            for (var d = startDirectory; Directory.Exists(d); d = Path.GetDirectoryName(d))
+            {
+                var subDirectory = Path.Combine(d, name);
+                if (Directory.Exists(subDirectory))
+                {
+                    return subDirectory;
+                }
+            }
+            return Option.None;
+        }
+
+        public static IHtmlContent RenderTildeSlash(this IHtmlHelper htmlHelper, IUrlHelper urlHelper, string html)
+        {
+            var basePath = urlHelper.ActionContext.HttpContext.Request.PathBase;
+            html = Regex.Replace(html, @"\""\/", @"""" + basePath + "/");
+            html = Regex.Replace(html, @"\""\~\/", @"""" + basePath + "/");
+            return htmlHelper.Raw(html);
+        }
+
+        public static string Truncate(this string x, int maxLength)
+        {
+            if (x.Length > maxLength)
+            {
+                return x.Substring(0, maxLength);
+            }
+            else
+            {
+                return x;
+            }
+        }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Functional.Option;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,17 +9,18 @@ namespace gitter
 {
     public class PlantumlRenderer : IPlantumlRenderer
     {
-        string cacheDir;
+        private readonly string cacheDir;
         private readonly string plantumlJar;
         const string pumlExtension = ".puml";
         const string pngExtension = ".png";
         readonly IProcessRunner processRunner;
 
-        public PlantumlRenderer(IProcessRunner processRunner, string plantumlJar)
+        public PlantumlRenderer(IProcessRunner processRunner, string plantumlJar, string cacheDir)
         {
             this.plantumlJar = plantumlJar;
             this.processRunner = processRunner;
-            cacheDir = Path.Combine(Path.GetTempPath(), Hash(nameof(PlantumlRenderer) + "-1.0.0"));
+            Utils.EnsureDirectoryExists(cacheDir);
+            this.cacheDir = cacheDir;
             Utils.EnsureDirectoryExists(cacheDir);
         }
 
@@ -52,6 +54,8 @@ namespace gitter
             });
         }
 
+        const string javaExe = @"java.exe";
+
         public async Task<Stream> GetPng(string id)
         {
             var imagePath = await Task.Factory.StartNew(() =>
@@ -65,7 +69,7 @@ namespace gitter
                     if (!File.Exists(imageFsPath))
                     {
                         var pumlFsPath = GetCachePath(id, pumlExtension);
-                        processRunner.Run("java.exe", new[] { "-jar", plantumlJar, "-o", cacheDir, pumlFsPath });
+                        var r = processRunner.Run(javaExe, new[] { "-jar", plantumlJar, "-o", cacheDir, pumlFsPath }).Result;
                     }
                 }
 
