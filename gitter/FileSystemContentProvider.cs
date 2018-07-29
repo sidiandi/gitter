@@ -44,14 +44,7 @@ namespace gitter
 
         static ContentPath GetChildPath(ContentPath p, FileSystemInfo c)
         {
-            if (c is DirectoryInfo)
-            {
-                return p.CatDir(c.Name).AsDirectory;
-            }
-            else
-            {
-                return p.CatDir(c.Name);
-            }
+            return p.CatDir(c.Name);
         }
 
         public IEnumerable<ContentPath> GetChildren(ContentPath path)
@@ -60,9 +53,9 @@ namespace gitter
             if (Directory.Exists(fsPath))
             {
                 var c = new DirectoryInfo(fsPath).GetFileSystemInfos()
+                    .OrderByDescending(_ => _ is DirectoryInfo).ThenBy(_ => _.Name)
                     .Where(_ => !_.Name.Equals(".git"))
                     .Select(_ => GetChildPath(path, _))
-                    .OrderByDescending(_ => _.IsDirectory).ThenBy(_ => _.NameWithDirSlash.Value)
                     .ToList();
                 return c;
             }

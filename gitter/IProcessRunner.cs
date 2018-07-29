@@ -12,6 +12,8 @@ namespace gitter
         public string Error;
         public DateTime ExitTime;
         public DateTime StartTime;
+
+        public bool Success => ExitCode == 0;
     }
 
     public interface IProcessRunner

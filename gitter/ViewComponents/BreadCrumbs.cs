@@ -16,7 +16,7 @@ namespace gitter
 
         public async Task<IViewComponentResult> InvokeAsync(ContentPath path)
         {
-            var parts = path.Lineage.Select(_ => new Link { Name = _.Name.ValueOr(String.Empty), Href = _.VirtualPath});
+            var parts = path.Lineage.Select(_ => new Link { Name = _.GetDisplayName("Home"), Href = _.VirtualPath});
             return View(parts);
         }
     }

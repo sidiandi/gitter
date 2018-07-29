@@ -52,19 +52,22 @@ namespace gitter
             var plantumlRenderer = new PlantumlRenderer(processRunner, plantumlJar, Path.Combine(environment.ContentRootPath, "plantuml-1.0.0"));
             var markdownRenderer = new MarkdownRenderer(plantumlRenderer);
 
-            // var gitRepository = Configuration["RepositoryPath"];
-            var gitRepository = "repository";
+            var gitRepository = Configuration["RepositoryPath"];
             if (!Path.IsPathRooted(gitRepository))
             {
                 gitRepository = Path.Combine(environment.ContentRootPath, gitRepository);
             }
 
             Utils.EnsureDirectoryExists(gitRepository);
+            var git = (IGit) new Git(processRunner, gitRepository);
+            services.AddSingleton(git);
             services.AddSingleton<IMarkdownRenderer>(markdownRenderer);
             services.AddSingleton<IContentProvider>(_ => (IContentProvider) new FileSystemContentProvider(gitRepository));
-            services.AddSingleton<IContentGrep>(_ => new GitContentGrep(processRunner, gitRepository));
+            services.AddSingleton<IContentGrep>(_ => new GitContentGrep(git));
+            services.AddSingleton<IHistory>(_ => new GitLog(git));
             services.AddSingleton<IPlantumlRenderer>(_ => plantumlRenderer);
             services.AddSingleton<IProcessRunner>(processRunner);
+            services.AddSingleton<LibGit2Sharp.IRepository>(new LibGit2Sharp.Repository(gitRepository));
         }
 
         IConfiguration configuration;

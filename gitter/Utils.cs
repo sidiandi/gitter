@@ -142,5 +142,44 @@ namespace gitter
             }
         }
 
+        public static string[] SplitArguments(string commandLine)
+        {
+            if (String.IsNullOrEmpty(commandLine))
+            {
+                return new string[] { };
+            }
+
+            var parmChars = commandLine.ToCharArray();
+            var inSingleQuote = false;
+            var inDoubleQuote = false;
+            for (var index = 0; index < parmChars.Length; index++)
+            {
+                if (parmChars[index] == '"' && !inSingleQuote)
+                {
+                    inDoubleQuote = !inDoubleQuote;
+                    parmChars[index] = '\n';
+                }
+                if (parmChars[index] == '\'' && !inDoubleQuote)
+                {
+                    inSingleQuote = !inSingleQuote;
+                    parmChars[index] = '\n';
+                }
+                if (!inSingleQuote && !inDoubleQuote && parmChars[index] == ' ')
+                    parmChars[index] = '\n';
+            }
+            return (new string(parmChars)).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        internal static object JoinTrailingSeparator(string separator, IEnumerable<string> items)
+        {
+            var s = new StringWriter();
+            foreach (var i in items)
+            {
+                s.Write(separator);
+                s.Write(i);
+            }
+            s.Write(separator);
+            return s.ToString();
+        }
     }
 }

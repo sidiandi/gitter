@@ -8,22 +8,20 @@ namespace gitter
 {
     public class GitContentGrep : IContentGrep
     {
-        private readonly IProcessRunner runner;
-        private readonly string gitRepository;
+        private readonly IGit git;
 
-        public GitContentGrep(IProcessRunner runner, string gitRepository)
+        public GitContentGrep(IGit git)
         {
-            this.runner = runner;
-            this.gitRepository = gitRepository;
+            this.git = git;
         }
 
         public async Task<IEnumerable<GrepResult>> Grep(string q)
         {
-            var result = await runner.Run("git.exe", new[] { "-C", gitRepository, "grep", "-I", "-n", "-i", q });
+            var result = await git.Run(new[] { "grep", "-I", "-n", "-i", q });
             return ParseGitGrepOutput(result.Output);
         }
 
-        private static IEnumerable<GrepResult> ParseGitGrepOutput(string output)
+        internal static IEnumerable<GrepResult> ParseGitGrepOutput(string output)
         {
             using (var r = new StringReader(output))
             {
@@ -39,7 +37,7 @@ namespace gitter
             }
         }
 
-        private static  GrepResult ParseGitGrepOutputLine(string line)
+        internal static  GrepResult ParseGitGrepOutputLine(string line)
         {
             var p = line.Split(":", 3);
             return new GrepResult
