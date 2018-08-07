@@ -119,6 +119,13 @@ namespace gitter
             return await Raw(contentProvider, path);
         }
 
+        static Option<string> Param(string name, string value)
+        {
+            return value == null
+                ? Option<string>.None
+                : $"--{name}={value}";
+        }
+
         public async Task<IActionResult> Grep(
             [FromServices] IContentProvider contentProvider,
             [FromServices] IProcessRunner runner,
@@ -206,9 +213,19 @@ namespace gitter
         public async Task<IActionResult> Stats(
             [FromServices] IMarkdownRenderer renderer, 
             [FromServices] IGit git,
-            [FromQuery] string q)
+            [FromQuery] string q,
+            [FromQuery] string since,
+            [FromQuery] string until,
+            [FromQuery] string author
+            )
         {
-            var logArgs = Utils.SplitArguments(q);
+            var logArgs = Utils.SplitArguments(q).Concat(new[]
+            {
+                Param(nameof(since), since),
+                Param(nameof(until), until),
+                Param(nameof(author), author)
+            }.WhereValue()).ToArray();
+
             var c = git.GetChanges(logArgs);
 
             var byName = c.GroupBy(_ => _.Commit.author.Email)
@@ -235,7 +252,14 @@ namespace gitter
                 .Take(100)
                 .ToList();
 
-            var markdown = $@"## Arguments
+            var markdown = $@"
+<form action=""/stats"" method=""get"" >
+<input name=""since"" placeholder=""since yyyy-mm-dd"" />
+<input name=""until"" placeholder=""until yyyy-mm-dd"" />
+<input name=""author"" placeholder=""author"" />
+</form>
+
+## Arguments
 
 {logArgs.MarkdownTable(_ => _)}
 
