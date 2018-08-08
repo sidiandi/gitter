@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Functional.Option;
 using gitter.Models;
@@ -209,6 +210,11 @@ namespace gitter
             return await MarkdownView(renderer, ContentPath.Root, AsCode(r.Output));
         }
 
+        static string Attribute(string v)
+        {
+            return WebUtility.HtmlEncode(v).Quote();
+        }
+
         [Route("/stats")]
         public async Task<IActionResult> Stats(
             [FromServices] IMarkdownRenderer renderer, 
@@ -244,7 +250,7 @@ namespace gitter
                 .GroupBy(_ => _.Path)
                 .Select(_ => new
                 {
-                    User = _.Key,
+                    Path = _.Key,
                     AddedLines = _.Sum(_c => _c.Change.Stats.AddedLines),
                     RemovedLines = _.Sum(_c => _c.Change.Stats.RemovedLines)
                 })
@@ -254,22 +260,27 @@ namespace gitter
 
             var markdown = $@"
 <form action=""/stats"" method=""get"" >
-<input name=""since"" placeholder=""since yyyy-mm-dd"" />
-<input name=""until"" placeholder=""until yyyy-mm-dd"" />
-<input name=""author"" placeholder=""author"" />
+<input name=""since"" placeholder=""since yyyy-mm-dd"" value={Attribute(since)} />
+<input name=""until"" placeholder=""until yyyy-mm-dd"" value={Attribute(until)} />
+<input name=""author"" placeholder=""author"" value={Attribute(author)} />
+<input type=""submit"" />
 </form>
-
-## Arguments
-
-{logArgs.MarkdownTable(_ => _)}
 
 ## By User
 
-{byName.MarkdownTable()}
+{byName.MarkdownTable()
+    .With("User", _ => $"[{_.User}](/stats?author={_.User})")
+    .With("Added Lines", _ => _.AddedLines)
+    .With("Removed Lines", _ => _.RemovedLines)
+}
 
 ## By Path
 
-{byPath.MarkdownTable()}
+{byPath.MarkdownTable()
+    .With("Path", _ => $"[{_.Path}](/{_.Path})")
+    .With("Added Lines", _ => _.AddedLines)
+    .With("Removed Lines", _ => _.RemovedLines)
+}
 
 ";
 
