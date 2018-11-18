@@ -5,6 +5,16 @@
     ViewData["Title"] = Model.Title;
 }
 
+<script>
+    var connectionUrl = new URL(document.location.href);
+    connectionUrl.protocol = connectionUrl.protocol === "https:" ? "wss" : "ws";
+    var socket = new WebSocket(connectionUrl);
+    socket.onmessage = function (event) {
+        console.log(event);
+        document.location.reload();
+    }
+</script>
+
 <header>
 
     @await Component.InvokeAsync(nameof(BreadCrumbs), new { Path = Model.Path })

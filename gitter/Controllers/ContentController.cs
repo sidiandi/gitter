@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Functional.Option;
 using gitter.Models;
@@ -77,7 +80,15 @@ namespace gitter
             [FromQuery] string q,
             string path)
         {
+            contentProvider.Pull();
+
             var contentPath = ContentPath.FromUrlPath(path);
+
+            if (this.HttpContext.WebSockets.IsWebSocketRequest)
+            {
+                await NotifyContentChanged(this.HttpContext.WebSockets, contentProvider, contentPath);
+                return Ok();
+            }
 
             if (log != null)
             {
@@ -118,6 +129,25 @@ namespace gitter
 
             // raw file
             return await Raw(contentProvider, path);
+        }
+
+        static async Task WaitForClose(WebSocket webSocket)
+        {
+            while (!webSocket.CloseStatus.HasValue)
+            {
+                await Task.Delay(1000);
+            }
+        }
+
+        private static async Task NotifyContentChanged(Microsoft.AspNetCore.Http.WebSocketManager webSockets, IContentProvider contentProvider, ContentPath contentPath)
+        {
+            var webSocket = await webSockets.AcceptWebSocketAsync();
+            using (contentProvider.NotifyChange(contentPath, cp => {
+                webSocket.SendAsync(UTF8Encoding.UTF8.GetBytes(cp.ToString()), WebSocketMessageType.Text, true, CancellationToken.None);
+            }))
+            {
+                await WaitForClose(webSocket);
+            }
         }
 
         static Option<string> Param(string name, string value)

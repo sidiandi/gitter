@@ -11,9 +11,10 @@ namespace gitter
     class FileSystemContentProvider : IContentProvider
     {
         private readonly string rootDirectory;
+        private readonly IGit git;
         private readonly IRenderer renderer;
 
-        public FileSystemContentProvider(string rootDirectory)
+        public FileSystemContentProvider(string rootDirectory, IGit git)
         {
             if (string.IsNullOrWhiteSpace(rootDirectory))
             {
@@ -21,6 +22,7 @@ namespace gitter
             }
 
             this.rootDirectory = rootDirectory;
+            this.git = git;
         }
 
         public Option<Stream> Read(ContentPath path)
@@ -69,6 +71,45 @@ namespace gitter
         {
             var fsPath = GetFileSystemPath(path);
             return File.Exists(fsPath) || Directory.Exists(fsPath);
+        }
+
+        DateTime nextPull = DateTime.MinValue;
+        TimeSpan pullInterval = TimeSpan.FromSeconds(10);
+
+        public Task Pull()
+        {
+            // itw4yclaa3btvv6psuesw5hn6zntnbw4yysczevrnhampjdseota
+            if (nextPull < DateTime.UtcNow)
+            {
+                nextPull = DateTime.UtcNow + pullInterval;
+                return git.Run(new[] { "pull" });
+            }
+            else
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        public IDisposable NotifyChange(ContentPath contentPath, Action<ContentPath> onChanged)
+        {
+            var fsPath = this.GetFileSystemPath(contentPath);
+            var directoryToWatch = fsPath = (Directory.Exists(fsPath)) ? fsPath : Path.GetDirectoryName(fsPath);
+            var w = new FileSystemWatcher(directoryToWatch);
+            w.BeginInit();
+            FileSystemEventHandler changed = (s, e) =>
+            {
+                onChanged(contentPath);
+            };
+
+            w.Changed += changed;
+            w.EndInit();
+            w.EnableRaisingEvents = true;
+            return w;
+        }
+
+        private void W_Changed(object sender, FileSystemEventArgs e)
+        {
+            throw new NotImplementedException();
         }
     }
 }

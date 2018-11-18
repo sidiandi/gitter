@@ -70,6 +70,19 @@ namespace gitter
                     {
                         var pumlFsPath = GetCachePath(id, pumlExtension);
                         var r = processRunner.Run(javaExe, new[] { "-jar", plantumlJar, "-o", cacheDir, pumlFsPath }).Result;
+                        if (r.ExitCode != 0)
+                        {
+                            throw new Exception($@"plantuml failed:
+ExitCode: {r.ExitCode}
+Output:
+{r.Output}
+
+Error:
+{r.Error}
+
+"
+                            );
+                        }
                     }
                 }
 

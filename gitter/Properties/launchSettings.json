@@ -23,9 +23,11 @@
     },
     "gitter": {
       "commandName": "Project",
+      "commandLineArgs": "RepositoryPath=C:\\work\\ProgrammerOfTheMonth",
       "launchBrowser": true,
+      "launchUrl": "https://localhost:5002/doc/meetings/2018-11-21%20Kosice/Incubator%20Kick-off%20in%20Kosice.md",
       "environmentVariables": {
-        "ASPNETCORE_URLS": "https://localhost:5001;http://localhost:5000",
+        "ASPNETCORE_URLS": "https://localhost:5002;http://localhost:5003",
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },

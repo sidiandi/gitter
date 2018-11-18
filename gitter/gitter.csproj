@@ -5,11 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LibGit2Sharp" Version="0.25.2" />
-    <PackageReference Include="Markdig" Version="0.15.1" />
-    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.2" />
+    <PackageReference Include="LibGit2Sharp" Version="0.25.3" />
+    <PackageReference Include="Markdig" Version="0.15.4" />
+    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.5" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="2.1.1" />
-    <PackageReference Include="mimetypes" Version="1.0.6" />
+    <PackageReference Include="mimetypes" Version="1.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Option" Version="3.0.1" />
   </ItemGroup>
 

@@ -45,7 +45,7 @@ namespace gitter
             return cp;
         }
 
-        public string Href => String.Join(separator, parts.Select(WebUtility.UrlEncode));
+        public string Href => String.Join(separator, parts.Select(Uri.EscapeUriString));
 
         public string AbsoluteHref => separator + Href;
 

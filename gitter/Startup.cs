@@ -37,7 +37,8 @@ namespace gitter
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            var plantumlJar = Path.Combine(environment.ContentRootPath, "plantuml.jar");
+            var plantumlJar = Configuration["PlantUmlJar"] ?? 
+                Path.Combine(environment.ContentRootPath, "plantuml.jar");
 
             var processRunner = new RealProcessRunner(
                 new[] { @"java\bin", @"graphviz\release\bin", @"Git\Cmd" }.Select(_ => Utils.LookUpwardsForSubdirectory(_))
@@ -52,7 +53,7 @@ namespace gitter
             var plantumlRenderer = new PlantumlRenderer(processRunner, plantumlJar, Path.Combine(environment.ContentRootPath, "plantuml-1.0.0"));
             var markdownRenderer = new MarkdownRenderer(plantumlRenderer);
 
-            var gitRepository = Configuration["RepositoryPath"];
+            var gitRepository = Configuration["Repository"];
             if (!Path.IsPathRooted(gitRepository))
             {
                 gitRepository = Path.Combine(environment.ContentRootPath, gitRepository);
@@ -62,7 +63,7 @@ namespace gitter
             var git = (IGit) new Git(processRunner, gitRepository);
             services.AddSingleton(git);
             services.AddSingleton<IMarkdownRenderer>(markdownRenderer);
-            services.AddSingleton<IContentProvider>(_ => (IContentProvider) new FileSystemContentProvider(gitRepository));
+            services.AddSingleton<IContentProvider>(_ => (IContentProvider) new FileSystemContentProvider(gitRepository, git));
             services.AddSingleton<IContentGrep>(_ => new GitContentGrep(git));
             services.AddSingleton<IHistory>(_ => new GitLog(git));
             services.AddSingleton<IPlantumlRenderer>(_ => plantumlRenderer);
@@ -86,6 +87,7 @@ namespace gitter
                 app.UseHsts();
             }
 
+            app.UseWebSockets();
             app.UseHttpsRedirection();
             app.UsePathBase(Configuration["PathBase"]);
             app.UseStaticFiles();

@@ -30,14 +30,22 @@ namespace gitter
 
         IDictionary<string, string> Environment { get; }
 
+        string GetArgumentString(IEnumerable<string> args)
+        {
+            return string.Join(" ", args.Select(QuoteIfRequired));
+        }
+
         public async Task<ProcessResult> Run(string file, IEnumerable<string> args)
         {
+            var argString = GetArgumentString(args);
+
+            Console.WriteLine($"{file} {argString}");
             var startTime = DateTime.UtcNow;
 
             var startInfo = new ProcessStartInfo()
             {
                 FileName = file,
-                Arguments = string.Join(" ", args.Select(QuoteIfRequired)),
+                Arguments = argString,
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -61,8 +69,7 @@ namespace gitter
             }
 
             Console.WriteLine(startInfo.EnvironmentVariables[PATH]);
-            Console.WriteLine(startInfo.FileName);
-            Console.WriteLine(startInfo.Arguments);
+            Console.WriteLine($"{startInfo.FileName} {startInfo.Arguments}");
 
             var process = Process.Start(startInfo);
 
@@ -73,14 +80,18 @@ namespace gitter
 
             Console.WriteLine(process.ExitCode);
 
-            return new ProcessResult
+            var result = new ProcessResult
             {
                 ExitCode = process.ExitCode,
                 StartTime = startTime,
                 ExitTime = DateTime.UtcNow,
                 Output = await output,
-                Error = await error
+                Error = await error,
+                Arguments = argString,
+                FileName = file
             };
+            Console.WriteLine(result);
+            return result;
         }
     }
 }
