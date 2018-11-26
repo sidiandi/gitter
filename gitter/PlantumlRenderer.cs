@@ -21,7 +21,6 @@ namespace gitter
             this.processRunner = processRunner;
             Utils.EnsureDirectoryExists(cacheDir);
             this.cacheDir = cacheDir;
-            Utils.EnsureDirectoryExists(cacheDir);
         }
 
         string GetCachePath(string id, string extension)

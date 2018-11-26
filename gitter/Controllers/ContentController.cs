@@ -80,8 +80,6 @@ namespace gitter
             [FromQuery] string q,
             string path)
         {
-            contentProvider.Pull();
-
             var contentPath = ContentPath.FromUrlPath(path);
 
             if (this.HttpContext.WebSockets.IsWebSocketRequest)
@@ -108,6 +106,10 @@ namespace gitter
 
             if (children.Any())
             {
+                if (!this.HttpContext.Request.Path.Value.EndsWith("/"))
+                {
+                    return this.LocalRedirectPermanent(this.HttpContext.Request.Path + "/");
+                }
                 return await MarkdownView(renderer, contentPath, GetDirectoryMarkdown(contentProvider, history, contentPath, children));
             }
 
@@ -126,6 +128,8 @@ namespace gitter
             {
                 return await MarkdownView(renderer, contentPath, GetSourceAsMarkdown(contentProvider, history, contentPath));
             }
+
+            contentProvider.Pull();
 
             // raw file
             return await Raw(contentProvider, path);

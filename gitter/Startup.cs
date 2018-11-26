@@ -50,7 +50,10 @@ namespace gitter
                 );
 
 
-            var plantumlRenderer = new PlantumlRenderer(processRunner, plantumlJar, Path.Combine(environment.ContentRootPath, "plantuml-1.0.0"));
+            var plantumlRenderer = new PlantumlRenderer(processRunner, plantumlJar, Path.Combine(
+                System.Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "gitter",
+                "plantuml"));
             var markdownRenderer = new MarkdownRenderer(plantumlRenderer);
 
             var gitRepository = Configuration["Repository"];
