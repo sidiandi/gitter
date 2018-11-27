@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,9 +9,12 @@ namespace gitter
 {
     internal class RealProcessRunner : IProcessRunner
     {
-        public RealProcessRunner(IEnumerable<string> pathDirectories, IDictionary<string, string> environment)
+        ILogger _log;
+
+        public RealProcessRunner(ILogger<RealProcessRunner> logger, IEnumerable<string> pathDirectories, IDictionary<string, string> environment)
         {
             this.PathDirectories = pathDirectories.ToList();
+            _log = logger;
             Environment = environment;
         }
 
@@ -38,8 +42,7 @@ namespace gitter
         public async Task<ProcessResult> Run(string file, IEnumerable<string> args)
         {
             var argString = GetArgumentString(args);
-
-            Console.WriteLine($"{file} {argString}");
+            _log.LogInformation("start {0} {1}", file, argString);
             var startTime = DateTime.UtcNow;
 
             var startInfo = new ProcessStartInfo()
@@ -55,7 +58,7 @@ namespace gitter
             foreach (var i in this.Environment)
             {
                 startInfo.EnvironmentVariables[i.Key] = i.Value;
-                Console.WriteLine("{0}={1}", i.Key, i.Value);
+                _log.LogDebug("{0}={1}", i.Key, i.Value);
             }
 
             foreach (var i in this.PathDirectories)
@@ -68,17 +71,12 @@ namespace gitter
                 }
             }
 
-            Console.WriteLine(startInfo.EnvironmentVariables[PATH]);
-            Console.WriteLine($"{startInfo.FileName} {startInfo.Arguments}");
-
             var process = Process.Start(startInfo);
 
             var output = process.StandardOutput.ReadToEndAsync();
             var error = process.StandardError.ReadToEndAsync();
 
             process.WaitForExit();
-
-            Console.WriteLine(process.ExitCode);
 
             var result = new ProcessResult
             {
@@ -90,7 +88,7 @@ namespace gitter
                 Arguments = argString,
                 FileName = file
             };
-            Console.WriteLine(result);
+            _log.LogInformation("result: {0}", result);
             return result;
         }
     }

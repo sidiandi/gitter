@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace gitter
 {
@@ -37,40 +38,38 @@ namespace gitter
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            var plantumlJar = Configuration["PlantUmlJar"] ?? 
-                Path.Combine(environment.ContentRootPath, "plantuml.jar");
-
-            var processRunner = new RealProcessRunner(
+            services.AddSingleton<IProcessRunner>(sp => new RealProcessRunner(
+                sp.GetRequiredService<ILogger<RealProcessRunner>>(),
                 new[] { @"java\bin", @"graphviz\release\bin", @"Git\Cmd" }.Select(_ => Utils.LookUpwardsForSubdirectory(_))
                 .Where(_ => _.HasValue).Select(_ => _.Value),
                 new Dictionary<string, string>
                 {
                     { "GRAPHVIZ_DOT", Utils.LookUpwardsForSubdirectory(@"graphviz\release\bin").Select(_ => Path.Combine(_, "dot.exe")).ValueOr(String.Empty) }
                 }
-                );
+                ));
 
+            var plantumlJar = Configuration["PlantUmlJar"] ?? Path.Combine(environment.ContentRootPath, "plantuml.jar");
 
-            var plantumlRenderer = new PlantumlRenderer(processRunner, plantumlJar, Path.Combine(
-                System.Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "gitter",
-                "plantuml"));
-            var markdownRenderer = new MarkdownRenderer(plantumlRenderer);
+            services.AddSingleton<IPlantumlRenderer>(sp => new PlantumlRenderer(
+                sp.GetRequiredService<IProcessRunner>(),
+                plantumlJar, 
+                Path.Combine(
+                    System.Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                    "gitter",
+                    "plantuml")));
+            services.AddSingleton<IMarkdownRenderer>(sp => new MarkdownRenderer(sp.GetRequiredService<IPlantumlRenderer>()));
 
             var gitRepository = Configuration["Repository"];
             if (!Path.IsPathRooted(gitRepository))
             {
                 gitRepository = Path.Combine(environment.ContentRootPath, gitRepository);
             }
-
             Utils.EnsureDirectoryExists(gitRepository);
-            var git = (IGit) new Git(processRunner, gitRepository);
-            services.AddSingleton(git);
-            services.AddSingleton<IMarkdownRenderer>(markdownRenderer);
-            services.AddSingleton<IContentProvider>(_ => (IContentProvider) new FileSystemContentProvider(gitRepository, git));
-            services.AddSingleton<IContentGrep>(_ => new GitContentGrep(git));
-            services.AddSingleton<IHistory>(_ => new GitLog(git));
-            services.AddSingleton<IPlantumlRenderer>(_ => plantumlRenderer);
-            services.AddSingleton<IProcessRunner>(processRunner);
+
+            services.AddSingleton<IGit>(_ => new Git(_.GetRequiredService<IProcessRunner>(), gitRepository));
+            services.AddSingleton<IContentProvider>(_ => new FileSystemContentProvider(gitRepository, _.GetRequiredService<IGit>()));
+            services.AddSingleton<IContentGrep, GitContentGrep>();
+            services.AddSingleton<IHistory, GitLog>();
             services.AddSingleton<LibGit2Sharp.IRepository>(new LibGit2Sharp.Repository(gitRepository));
         }
 

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Functional.Option;
 using gitter.Models;
 using LibGit2Sharp;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -108,7 +109,9 @@ namespace gitter
             {
                 if (!this.HttpContext.Request.Path.Value.EndsWith("/"))
                 {
-                    return this.LocalRedirectPermanent(this.HttpContext.Request.Path + "/");
+                    var url = Microsoft.AspNetCore.Http.Extensions.UriHelper.GetEncodedUrl(this.HttpContext.Request);
+                    var redirectTo = url + "/";
+                    return this.Redirect(redirectTo);
                 }
                 return await MarkdownView(renderer, contentPath, GetDirectoryMarkdown(contentProvider, history, contentPath, children));
             }

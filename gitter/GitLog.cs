@@ -24,7 +24,7 @@ namespace gitter
 
         public async Task<Option<string>> GetRecentChanges(ContentPath path)
         {
-            var r = await git.Run(new[] { "log", "-100", $"--pretty=format:* [%ar: %s]({path.AbsoluteHref}?log=--stat+-p+-1+-U+%H), by %an", git.GetPath(path) });
+            var r = await git.Run(new[] { "log", "-100", $"--pretty=format:* [%ar: %s]({path.AbsoluteHref}?log=--stat+-p+-1+-U+%H), by %an", "--", git.GetPath(path) });
             return r.Success ? UrlEncode(r.Output) : Option<string>.None;
         }
     }
